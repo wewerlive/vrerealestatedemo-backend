@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:dart_frog/dart_frog.dart';
-import 'package:dotenv/dotenv.dart';
 import 'package:firedart/firedart.dart';
 
 /// initializes Firebase Firestore
@@ -9,9 +8,9 @@ Middleware fireStoreMiddleware() {
   return (handler) {
     return (context) async {
       // Load environment variables
-      final env = DotEnv(includePlatformEnvironment: true)..load();
+      final env = Platform.environment['FIREBASE_PROJECT_ID'];
 
-      final projectId = env['FIREBASE_PROJECT_ID'];
+      final projectId = env;
 
       if (projectId == null) {
         return Response(
@@ -36,9 +35,9 @@ Middleware fireAuthMiddleware() {
   return (handler) {
     return (context) async {
       // Load environment variables
-      final env = DotEnv(includePlatformEnvironment: true)..load();
+      final env = Platform.environment['FIREBASE_API_KEY'];
 
-      final apiKey = env['FIREBASE_API_KEY'];
+      final apiKey = env;
 
       if (apiKey == null) {
         return Response(
@@ -62,10 +61,11 @@ Middleware firebaseMiddleware() {
   return (handler) {
     return (context) async {
       // Load environment variables
-      final env = DotEnv(includePlatformEnvironment: true)..load();
+      final envKey = Platform.environment['FIREBASE_API_KEY'];
+      final envId = Platform.environment['FIREBASE_PROJECT_ID'];
 
-      final apiKey = env['FIREBASE_API_KEY'];
-      final projectId = env['FIREBASE_PROJECT_ID'];
+      final apiKey = envKey;
+      final projectId = envId;
 
       if (apiKey == null || projectId == null) {
         return Response(
