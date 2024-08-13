@@ -9,6 +9,7 @@ Future<Response> onRequest(RequestContext context) async {
     HttpMethod.get => _handleGet(context),
     HttpMethod.post => _handlePost(context),
     HttpMethod.put => _handlePut(context),
+    HttpMethod.delete => _handleDelete(context),
     _ => Future.value(
         Response(statusCode: HttpStatus.methodNotAllowed),
       ),
@@ -309,6 +310,69 @@ Future<Response> _handlePut(RequestContext context) async {
     return Response(
       statusCode: HttpStatus.internalServerError,
       body: jsonEncode({'error': 'Failed to update estate: $e'}),
+    );
+  }
+}
+
+Future<Response> _handleDelete(RequestContext context) async {
+  final firestore = Firestore.instance;
+  final estatesCollection = firestore.collection('estates');
+
+  try {
+    final body = await context.request.body();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+
+    if (!data.containsKey('estateID') || !data.containsKey('sceneID')) {
+      return Response(
+        statusCode: HttpStatus.badRequest,
+        body: jsonEncode(
+            {'error': 'Missing required fields: estateID and sceneID'}),
+      );
+    }
+
+    final estateID = data['estateID'] as String;
+    final sceneID = data['sceneID'] as String;
+
+    final querySnapshot =
+        await estatesCollection.where('estateID', isEqualTo: estateID).get();
+
+    if (querySnapshot.isEmpty) {
+      return Response(
+        statusCode: HttpStatus.notFound,
+        body: jsonEncode({'error': 'Estate not found'}),
+      );
+    }
+
+    final estateDoc = querySnapshot.first;
+    final estateData = estateDoc.map;
+    final scenes = estateData['scenes'] as List<dynamic>? ?? [];
+
+    final updatedScenes =
+        scenes.where((scene) => scene['id'] != sceneID).toList();
+
+    if (scenes.length == updatedScenes.length) {
+      return Response(
+        statusCode: HttpStatus.notFound,
+        body: jsonEncode({'error': 'Scene not found in the estate'}),
+      );
+    }
+
+    await estatesCollection
+        .document(estateDoc.id)
+        .update({'scenes': updatedScenes});
+
+    return Response(
+      body: jsonEncode({
+        'message': 'Scene deleted successfully',
+        'estateID': estateID,
+        'deletedSceneID': sceneID,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+  } catch (e) {
+    return Response(
+      statusCode: HttpStatus.internalServerError,
+      body: jsonEncode({'error': 'Failed to delete scene: $e'}),
     );
   }
 }
