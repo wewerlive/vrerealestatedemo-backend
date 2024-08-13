@@ -41,7 +41,7 @@ Future<Response> _onPost(RequestContext context) async {
 
     return Response(
       body: jsonEncode(
-          {'message': 'Login successful', 'token': token, 'userId': user.id}),
+          {'message': 'Login successful', 'token': token, 'userId': user.id},),
     );
   } catch (e) {
     return Response(

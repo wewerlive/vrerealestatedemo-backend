@@ -150,7 +150,6 @@ Future<Response> _handlePut(RequestContext context) async {
       await devicesCollection.document(documentId).update(updateData);
 
       return Response(
-        statusCode: HttpStatus.ok,
         body: jsonEncode({
           'message': 'Device updated successfully',
           'deviceID': deviceID,

@@ -23,7 +23,7 @@ Handler get onRequest {
         } else if (data['type'] == 'update') {
           // Update device status
           _updateDeviceStatus(
-              data['deviceId'] as String, data['status'] as String);
+              data['deviceId'] as String, data['status'] as String,);
         }
       },
       onDone: () {
@@ -64,7 +64,7 @@ Future<void> _updateDeviceStatus(String deviceId, String newStatus) async {
         'type': 'statusUpdate',
         'deviceId': deviceId,
         'status': newStatus,
-      }));
+      }),);
     }
   } catch (e) {
     print('Error updating device status: $e');

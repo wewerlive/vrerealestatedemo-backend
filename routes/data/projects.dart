@@ -68,7 +68,7 @@ Future<Response> _handleGetEstatesByDeviceID(String deviceID) async {
                       'id': scene['id'] as String? ?? '',
                       'sceneName': scene['sceneName'] as String? ?? '',
                       'imageUrl': scene['imageUrl'] as String? ?? '',
-                    })
+                    },)
                 .toList() ??
             [],
         'status': data['status'] as String? ?? '',
@@ -103,7 +103,7 @@ Future<Response> _handleGetAllEstates() async {
                       'id': scene['id'] as String? ?? '',
                       'sceneName': scene['sceneName'] as String? ?? '',
                       'imageUrl': scene['imageUrl'] as String? ?? '',
-                    })
+                    },)
                 .toList() ??
             [],
         'status': data['status'] as String? ?? '',
@@ -172,7 +172,7 @@ Future<Response> _handlePost(RequestContext context) async {
           return Response(
             statusCode: HttpStatus.badRequest,
             body: jsonEncode(
-                {'error': 'Scene IDs must be unique within an estate'}),
+                {'error': 'Scene IDs must be unique within an estate'},),
             headers: {'Content-Type': 'application/json'},
           );
         }
@@ -241,7 +241,7 @@ Future<Response> _handlePut(RequestContext context) async {
         final newScenes = data['scenes'] as List<dynamic>;
 
         final existingSceneIds = Set<String>.from(
-            existingScenes.map((scene) => scene['id'] as String));
+            existingScenes.map((scene) => scene['id'] as String),);
 
         for (final newScene in newScenes) {
           if (newScene is Map<String, dynamic>) {
@@ -249,7 +249,7 @@ Future<Response> _handlePut(RequestContext context) async {
               return Response(
                 statusCode: HttpStatus.badRequest,
                 body: jsonEncode(
-                    {'error': 'All scenes must have an ID provided'}),
+                    {'error': 'All scenes must have an ID provided'},),
               );
             }
 
@@ -258,7 +258,7 @@ Future<Response> _handlePut(RequestContext context) async {
               return Response(
                 statusCode: HttpStatus.badRequest,
                 body: jsonEncode(
-                    {'error': 'New scene ID already exists in the estate'}),
+                    {'error': 'New scene ID already exists in the estate'},),
               );
             }
             existingSceneIds.add(newSceneId);
@@ -326,7 +326,7 @@ Future<Response> _handleDelete(RequestContext context) async {
       return Response(
         statusCode: HttpStatus.badRequest,
         body: jsonEncode(
-            {'error': 'Missing required fields: estateID and sceneID'}),
+            {'error': 'Missing required fields: estateID and sceneID'},),
       );
     }
 
