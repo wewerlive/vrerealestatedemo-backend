@@ -1,0 +1,22 @@
+name: vrrealstatedemo
+description: An new Dart Frog application
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  dart_frog: ^1.0.0
+  http: ^1.2.2
+  firedart: ^0.9.8
+  dotenv: ^4.2.0
+  crypto: ^3.0.3
+  dart_jsonwebtoken: ^2.14.0
+  shelf_cors_headers: ^0.1.5
+  dart_frog_web_socket: ^1.0.0
+
+dev_dependencies:
+  mocktail: ^1.0.0
+  test: ^1.19.2
+  very_good_analysis: ^6.0.0
