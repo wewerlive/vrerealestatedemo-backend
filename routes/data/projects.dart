@@ -64,6 +64,7 @@ Future<Response> _handleGetEstatesByDeviceID(String deviceID) async {
         'estateID': data['estateID'] as String? ?? '',
         'scenes': (data['scenes'] as List<dynamic>?)
                 ?.map((scene) => {
+                      'id': scene['id'] as String? ?? '',
                       'sceneName': scene['sceneName'] as String? ?? '',
                       'imageUrl': scene['imageUrl'] as String? ?? '',
                     })
@@ -98,6 +99,7 @@ Future<Response> _handleGetAllEstates() async {
         'estateID': data['estateID'] as String? ?? '',
         'scenes': (data['scenes'] as List<dynamic>?)
                 ?.map((scene) => {
+                      'id': scene['id'] as String? ?? '',
                       'sceneName': scene['sceneName'] as String? ?? '',
                       'imageUrl': scene['imageUrl'] as String? ?? '',
                     })
@@ -133,6 +135,7 @@ Future<Response> _handlePost(RequestContext context) async {
       return Response(
         statusCode: HttpStatus.badRequest,
         body: jsonEncode({'error': 'Missing required fields'}),
+        headers: {'Content-Type': 'application/json'},
       );
     }
 
@@ -152,6 +155,36 @@ Future<Response> _handlePost(RequestContext context) async {
       );
     }
 
+    final scenes = data['scenes'] as List<dynamic>;
+    final sceneIds = <String>{};
+    for (final scene in scenes) {
+      if (scene is Map<String, dynamic>) {
+        if (!scene.containsKey('id')) {
+          return Response(
+            statusCode: HttpStatus.badRequest,
+            body: jsonEncode({'error': 'All scenes must have an ID provided'}),
+            headers: {'Content-Type': 'application/json'},
+          );
+        }
+        final sceneId = scene['id'] as String;
+        if (sceneIds.contains(sceneId)) {
+          return Response(
+            statusCode: HttpStatus.badRequest,
+            body: jsonEncode(
+                {'error': 'Scene IDs must be unique within an estate'}),
+            headers: {'Content-Type': 'application/json'},
+          );
+        }
+        sceneIds.add(sceneId);
+      } else {
+        return Response(
+          statusCode: HttpStatus.badRequest,
+          body: jsonEncode({'error': 'Invalid scene data'}),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+    }
+
     final newEstate = await estatesCollection.add(data);
     return Response(
       statusCode: HttpStatus.created,
@@ -165,6 +198,7 @@ Future<Response> _handlePost(RequestContext context) async {
     return Response(
       statusCode: HttpStatus.internalServerError,
       body: jsonEncode({'error': 'Failed to add estate: $e'}),
+      headers: {'Content-Type': 'application/json'},
     );
   }
 }
@@ -187,12 +221,61 @@ Future<Response> _handlePut(RequestContext context) async {
     final estateID = data['estateID'] as String;
     final updateData = <String, dynamic>{};
 
+    if (data.containsKey('estateName')) {
+      updateData['estateName'] = data['estateName'] as String;
+    }
+
     if (data.containsKey('status')) {
       updateData['status'] = data['status'] as String;
     }
 
     if (data.containsKey('scenes')) {
-      updateData['scenes'] = data['scenes'] as List<dynamic>;
+      final querySnapshot =
+          await estatesCollection.where('estateID', isEqualTo: estateID).get();
+
+      if (querySnapshot.isNotEmpty) {
+        final existingEstate = querySnapshot.first.map;
+        final existingScenes =
+            (existingEstate['scenes'] as List<dynamic>?) ?? [];
+        final newScenes = data['scenes'] as List<dynamic>;
+
+        final existingSceneIds = Set<String>.from(
+            existingScenes.map((scene) => scene['id'] as String));
+
+        for (final newScene in newScenes) {
+          if (newScene is Map<String, dynamic>) {
+            if (!newScene.containsKey('id')) {
+              return Response(
+                statusCode: HttpStatus.badRequest,
+                body: jsonEncode(
+                    {'error': 'All scenes must have an ID provided'}),
+              );
+            }
+
+            final newSceneId = newScene['id'] as String;
+            if (existingSceneIds.contains(newSceneId)) {
+              return Response(
+                statusCode: HttpStatus.badRequest,
+                body: jsonEncode(
+                    {'error': 'New scene ID already exists in the estate'}),
+              );
+            }
+            existingSceneIds.add(newSceneId);
+          } else {
+            return Response(
+              statusCode: HttpStatus.badRequest,
+              body: jsonEncode({'error': 'Invalid scene data'}),
+            );
+          }
+        }
+
+        updateData['scenes'] = [...existingScenes, ...newScenes];
+      } else {
+        return Response(
+          statusCode: HttpStatus.notFound,
+          body: jsonEncode({'error': 'Estate not found'}),
+        );
+      }
     }
 
     if (updateData.isEmpty) {
@@ -204,7 +287,6 @@ Future<Response> _handlePut(RequestContext context) async {
 
     final querySnapshot =
         await estatesCollection.where('estateID', isEqualTo: estateID).get();
-
     if (querySnapshot.isEmpty) {
       return Response(
         statusCode: HttpStatus.notFound,
@@ -216,7 +298,6 @@ Future<Response> _handlePut(RequestContext context) async {
     await estatesCollection.document(documentId).update(updateData);
 
     return Response(
-      statusCode: HttpStatus.ok,
       body: jsonEncode({
         'message': 'Estate updated successfully',
         'estateID': estateID,
