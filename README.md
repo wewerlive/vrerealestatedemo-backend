@@ -1,10 +1,25 @@
-# VR Real Estate Demo - Backend
-
-[![style: very good analysis][very_good_analysis_badge]][very_good_analysis_link]
-[![License: MIT][license_badge]][license_link]
-[![Powered by Dart Frog](https://img.shields.io/endpoint?url=https://tinyurl.com/dartfrog-badge)](https://dartfrog.vgv.dev)
+# VR Real Estate Demo Backend
 
 A backend system for a virtual reality real estate platform built with Dart Frog and Firebase.
+
+## Table of Contents
+
+- [VR Real Estate Demo Backend](#vr-real-estate-demo-backend)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Prerequisites](#prerequisites)
+  - [Project Installation](#project-installation)
+  - [Running the Project](#running-the-project)
+  - [API Endpoints](#api-endpoints)
+    - [Authentication](#authentication)
+    - [Devices](#devices)
+    - [Estates (Projects)](#estates-projects)
+    - [Admin](#admin)
+    - [WebSocket](#websocket)
+  - [File Structure](#file-structure)
+  - [Testing](#testing)
+  - [Troubleshooting Common Errors](#troubleshooting-common-errors)
+  - [Contributing](#contributing)
 
 ## Features
 
@@ -20,35 +35,12 @@ A backend system for a virtual reality real estate platform built with Dart Frog
 - Flutter SDK (latest stable version)
 - Firebase project set up
 
-## Flutter Installation
-
-### macOS
-
-1. Download the Flutter SDK from the [official Flutter website](https://flutter.dev/docs/get-started/install/macos).
-2. Extract the downloaded file in the desired location, e.g., `~/development`.
-3. Add Flutter to your path:
-   ```sh
-   export PATH="$PATH:[PATH_TO_FLUTTER_GIT_DIRECTORY]/flutter/bin"
-   ```
-4. Run `flutter doctor` to verify the installation and install any missing dependencies.
-
-### Windows
-
-1. Download the Flutter SDK from the [official Flutter website](https://flutter.dev/docs/get-started/install/windows).
-2. Extract the zip file in the desired location, e.g., `C:\src\flutter`.
-3. Update your path:
-   - From the Start search bar, type 'env' and select "Edit environment variables for your account".
-   - Under "User variables", find the "Path" variable, select it and click "Edit".
-   - Click "New" and add the full path to `flutter\bin`.
-4. Run `flutter doctor` in Command Prompt to verify the installation and install any missing dependencies.
-
 ## Project Installation
 
 1. Clone the repository:
 
    ```sh
    git clone https://github.com/wewerlive/vrrealstatedemo.git
-
    cd vrrealstatedemo
    ```
 
@@ -77,57 +69,97 @@ A backend system for a virtual reality real estate platform built with Dart Frog
 
 ## API Endpoints
 
+### Authentication
 - `POST /auth/register`: Register a new user
 - `POST /auth/login`: Login user
+
+### Devices
 - `GET /data/devices`: Get all devices
 - `POST /data/devices`: Add a new device
 - `PUT /data/devices`: Update a device
+
+### Estates (Projects)
 - `GET /data/projects`: Get all estates
 - `POST /data/projects`: Add a new estate
 - `PUT /data/projects`: Update an estate
+- `DELETE /data/projects`: Delete a scene from an estate
 
-<div style="background-color: #ce2d2d; padding: 1rem; color:black;">
+### Admin
+- `GET /admin/users`: Get all users
+- `POST /admin/ownerships/project`: Manage project ownerships
+- `POST /admin/ownerships/device`: Manage device ownerships
 
-## WebSocket Connection
+### WebSocket
+- Connect to `/server/socket` for real-time updates
 
-#### Work In Progress
+## File Structure
 
-Connect to `/socket/connection` for real-time updates.
-
-</div>
+```
+vrrealstatedemo/
+├── .dart_frog/
+├── lib/
+│   └── Firebase.dart
+├── routes/
+│   ├── _middleware.dart
+│   ├── index.dart
+│   ├── admin/
+│   │   ├── _middleware.dart
+│   │   ├── users/
+│   │   │   └── index.dart
+│   │   └── ownerships/
+│   │       ├── device.dart
+│   │       └── project.dart
+│   ├── auth/
+│   │   ├── login/
+│   │   │   ├── _middleware.dart
+│   │   │   └── index.dart
+│   │   └── register/
+│   │       ├── _middleware.dart
+│   │       └── index.dart
+│   ├── data/
+│   │   ├── _middleware.dart
+│   │   ├── index.dart
+│   │   ├── devices.dart
+│   │   └── projects.dart
+│   └── server/
+│       ├── _middleware.dart
+│       └── socket.dart
+├── test/
+│   └── routes/
+│       └── index_test.dart
+├── analysis_options.yaml
+├── dart_frog.yaml
+├── pubspec.yaml
+└── README.md
+```
 
 ## Testing
 
 Run tests using the following command:
 
-```
+```sh
 dart test
 ```
 
 ## Troubleshooting Common Errors
 
 1. **Firebase Initialization Error**:
-
    - Error: "Firebase credentials not found in environment variables"
    - Solution: Ensure that your `.env` file is properly set up with the correct Firebase credentials.
 
 2. **Dart Frog Server Won't Start**:
-
    - Error: "Address already in use"
    - Solution: Check if another process is using port 8080. You can change the port in the `.dart_frog/server.dart` file.
 
 3. **Firestore Connection Issues**:
-
    - Error: "Failed to get document because the client is offline"
    - Solution: Check your internet connection and ensure your Firebase project is properly set up and the rules allow read/write operations.
 
 4. **CORS Errors**:
-
    - Error: "Access to XMLHttpRequest has been blocked by CORS policy"
    - Solution: Ensure the CORS middleware is properly set up in your `_middleware.dart` file.
 
 5. **Flutter SDK Not Found**:
-
    - Error: "Flutter SDK not found. Define location with flutter.sdk in the local.properties file."
    - Solution: Ensure Flutter is properly installed and added to your PATH.
 
