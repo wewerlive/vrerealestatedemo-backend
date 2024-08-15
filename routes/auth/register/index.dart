@@ -46,6 +46,8 @@ Future<Response> _onPost(RequestContext context) async {
       'hashedPassword': hashedPassword,
       'createdAt': DateTime.now().toIso8601String(),
       'firebaseAuthId': user.id,
+      'status': 'active',
+      'updatedAt': DateTime.now().toIso8601String(),
     });
 
     return Response(
