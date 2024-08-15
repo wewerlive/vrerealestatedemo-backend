@@ -10,7 +10,8 @@ Future<Response> onRequest(RequestContext context) async {
     HttpMethod.get => _handleGet(context),
     HttpMethod.post => _handlePost(context),
     HttpMethod.put => _handlePut(context),
-    HttpMethod.delete => _handleDelete(context),
+    HttpMethod.patch => _handlePatchScene(context),
+    HttpMethod.delete => _handleDeleteEstate(context),
     _ => Future.value(
         Response(statusCode: HttpStatus.methodNotAllowed),
       ),
@@ -65,11 +66,13 @@ Future<Response> _handleGetEstatesByDeviceID(String deviceID) async {
         'estateName': data['estateName'] as String? ?? '',
         'estateID': data['estateID'] as String? ?? '',
         'scenes': (data['scenes'] as List<dynamic>?)
-                ?.map((scene) => {
-                      'id': scene['id'] as String? ?? '',
-                      'sceneName': scene['sceneName'] as String? ?? '',
-                      'imageUrl': scene['imageUrl'] as String? ?? '',
-                    },)
+                ?.map(
+                  (scene) => {
+                    'id': scene['id'] as String? ?? '',
+                    'sceneName': scene['sceneName'] as String? ?? '',
+                    'imageUrl': scene['imageUrl'] as String? ?? '',
+                  },
+                )
                 .toList() ??
             [],
         'status': data['status'] as String? ?? '',
@@ -100,11 +103,13 @@ Future<Response> _handleGetAllEstates() async {
         'estateName': data['estateName'] as String? ?? '',
         'estateID': data['estateID'] as String? ?? '',
         'scenes': (data['scenes'] as List<dynamic>?)
-                ?.map((scene) => {
-                      'id': scene['id'] as String? ?? '',
-                      'sceneName': scene['sceneName'] as String? ?? '',
-                      'imageUrl': scene['imageUrl'] as String? ?? '',
-                    },)
+                ?.map(
+                  (scene) => {
+                    'id': scene['id'] as String? ?? '',
+                    'sceneName': scene['sceneName'] as String? ?? '',
+                    'imageUrl': scene['imageUrl'] as String? ?? '',
+                  },
+                )
                 .toList() ??
             [],
         'status': data['status'] as String? ?? '',
@@ -173,7 +178,8 @@ Future<Response> _handlePost(RequestContext context) async {
           return Response(
             statusCode: HttpStatus.badRequest,
             body: jsonEncode(
-                {'error': 'Scene IDs must be unique within an estate'},),
+              {'error': 'Scene IDs must be unique within an estate'},
+            ),
             headers: {'Content-Type': 'application/json'},
           );
         }
@@ -242,7 +248,8 @@ Future<Response> _handlePut(RequestContext context) async {
         final newScenes = data['scenes'] as List<dynamic>;
 
         final existingSceneIds = Set<String>.from(
-            existingScenes.map((scene) => scene['id'] as String),);
+          existingScenes.map((scene) => scene['id'] as String),
+        );
 
         for (final newScene in newScenes) {
           if (newScene is Map<String, dynamic>) {
@@ -250,7 +257,8 @@ Future<Response> _handlePut(RequestContext context) async {
               return Response(
                 statusCode: HttpStatus.badRequest,
                 body: jsonEncode(
-                    {'error': 'All scenes must have an ID provided'},),
+                  {'error': 'All scenes must have an ID provided'},
+                ),
               );
             }
 
@@ -259,7 +267,8 @@ Future<Response> _handlePut(RequestContext context) async {
               return Response(
                 statusCode: HttpStatus.badRequest,
                 body: jsonEncode(
-                    {'error': 'New scene ID already exists in the estate'},),
+                  {'error': 'New scene ID already exists in the estate'},
+                ),
               );
             }
             existingSceneIds.add(newSceneId);
@@ -315,7 +324,7 @@ Future<Response> _handlePut(RequestContext context) async {
   }
 }
 
-Future<Response> _handleDelete(RequestContext context) async {
+Future<Response> _handlePatchScene(RequestContext context) async {
   final firestore = Firestore.instance;
   final estatesCollection = firestore.collection('estates');
 
@@ -327,7 +336,8 @@ Future<Response> _handleDelete(RequestContext context) async {
       return Response(
         statusCode: HttpStatus.badRequest,
         body: jsonEncode(
-            {'error': 'Missing required fields: estateID and sceneID'},),
+          {'error': 'Missing required fields: estateID and sceneID'},
+        ),
       );
     }
 
@@ -374,6 +384,69 @@ Future<Response> _handleDelete(RequestContext context) async {
     return Response(
       statusCode: HttpStatus.internalServerError,
       body: jsonEncode({'error': 'Failed to delete scene: $e'}),
+    );
+  }
+}
+
+Future<Response> _handleDeleteEstate(RequestContext context) async {
+  final firestore = Firestore.instance;
+  final estatesCollection = firestore.collection('estates');
+  final usersCollection = firestore.collection('users');
+  // DELETE /data/projects?estateID=abc123
+
+  try {
+    final estateID = context.request.uri.queryParameters['estateID'];
+
+    if (estateID == null) {
+      return Response(
+        statusCode: HttpStatus.badRequest,
+        body:
+            jsonEncode({'error': 'Missing required query parameter: estateID'}),
+      );
+    }
+
+    final estateQuerySnapshot =
+        await estatesCollection.where('estateID', isEqualTo: estateID).get();
+
+    if (estateQuerySnapshot.isEmpty) {
+      return Response(
+        statusCode: HttpStatus.notFound,
+        body: jsonEncode({'error': 'Estate not found'}),
+      );
+    }
+
+    final estateDocumentId = estateQuerySnapshot.first.id;
+    await estatesCollection.document(estateDocumentId).delete();
+
+    final usersQuerySnapshot = await usersCollection
+        .where('assignedEstates', arrayContains: estateID)
+        .get();
+
+    for (final userDoc in usersQuerySnapshot) {
+      final removeUserEstate =
+          List<dynamic>.from(userDoc['assignedEstates'] as Iterable<dynamic>)
+            ..remove(estateID);
+
+      await usersCollection.document(userDoc.id).update({
+        'assignedEstates': removeUserEstate,
+      });
+    }
+
+    return Response(
+      body: jsonEncode({
+        'message':
+            'Estate deleted successfully and removed from associated users',
+        'estateID': estateID,
+        'usersUpdated': usersQuerySnapshot.length,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+  } catch (e) {
+    return Response(
+      statusCode: HttpStatus.internalServerError,
+      body: jsonEncode(
+        {'error': 'Failed to delete estate: $e'},
+      ),
     );
   }
 }
