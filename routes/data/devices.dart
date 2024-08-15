@@ -10,6 +10,7 @@ Future<Response> onRequest(RequestContext context) async {
     HttpMethod.get => _handleGet(),
     HttpMethod.post => _handlePost(context),
     HttpMethod.put => _handlePut(context),
+    HttpMethod.delete => _handleDelete(context),
     _ => Future.value(
         Response(statusCode: HttpStatus.methodNotAllowed),
       ),
@@ -65,7 +66,6 @@ Future<Response> _handlePost(RequestContext context) async {
 
     final deviceID = data['deviceID'] as String;
 
-    // Check if a device with the given deviceID already exists
     final existingDevices =
         await devicesCollection.where('deviceID', isEqualTo: deviceID).get();
 
@@ -168,6 +168,72 @@ Future<Response> _handlePut(RequestContext context) async {
       statusCode: HttpStatus.internalServerError,
       body: jsonEncode(
         {'error': 'Failed to update device: $e'},
+      ),
+    );
+  }
+}
+
+Future<Response> _handleDelete(RequestContext context) async {
+  final firestore = Firestore.instance;
+  final devicesCollection = firestore.collection('devices');
+  final usersCollection = firestore.collection('users');
+  // DELETE /data/devices?deviceID=abc123
+
+  try {
+    final deviceID = context.request.uri.queryParameters['deviceID'];
+
+    if (deviceID == null) {
+      return Response(
+        statusCode: HttpStatus.badRequest,
+        body:
+            jsonEncode({'error': 'Missing required query parameter: deviceID'}),
+      );
+    }
+
+    final deviceQuerySnapshot =
+        await devicesCollection.where('deviceID', isEqualTo: deviceID).get();
+
+    if (deviceQuerySnapshot.isEmpty) {
+      return Response(
+        statusCode: HttpStatus.notFound,
+        body: jsonEncode({'error': 'Device not found'}),
+      );
+    }
+
+    final deviceDocumentId = deviceQuerySnapshot.first.id;
+    await devicesCollection.document(deviceDocumentId).delete();
+
+    final usersQuerySnapshot =
+        // ignore: lines_longer_than_80_chars
+        await usersCollection
+            .where('assignedDevices', arrayContains: deviceID)
+            .get();
+
+    for (final userDoc in usersQuerySnapshot) {
+      // ignore: lines_longer_than_80_chars
+      final removeUserDevice =
+          List<dynamic>.from(userDoc['assignedDevices'] as Iterable<dynamic>)
+              ..remove(deviceID);
+
+      await usersCollection.document(userDoc.id).update({
+        'assignedDevices': removeUserDevice,
+      });
+    }
+
+    return Response(
+      body: jsonEncode({
+        'message':
+            'Device deleted successfully and removed from associated users',
+        'deviceID': deviceID,
+        'usersUpdated': usersQuerySnapshot.length,
+      }),
+      headers: {'Content-Type': 'application/json'},
+    );
+  } catch (e) {
+    return Response(
+      statusCode: HttpStatus.internalServerError,
+      body: jsonEncode(
+        {'error': 'Failed to delete device: $e'},
       ),
     );
   }
