@@ -37,15 +37,15 @@ Future<Response> _onPost(RequestContext context) async {
     final hashedPassword = sha256.convert(utf8.encode(password)).toString();
 
     final firestore = Firestore.instance;
-    final userDoc = firestore.collection('users').document(hashedPassword);
+    final userDoc =
+        firestore.collection('users').document(user.id);
 
     await userDoc.set({
-      'id': userDoc.id, // same as hashedPassword
+      'id': user.id,
       'name': name,
       'email': email,
       'hashedPassword': hashedPassword,
       'createdAt': DateTime.now().toIso8601String(),
-      'firebaseAuthId': user.id,
       'status': 'active',
       'updatedAt': DateTime.now().toIso8601String(),
     });
