@@ -8,7 +8,7 @@ import 'package:firedart/firedart.dart';
 Future<Response> onRequest(RequestContext context) async {
   return switch (context.request.method) {
     HttpMethod.get => _handleGet(),
-    HttpMethod.patch => _handlePatch(context),
+    HttpMethod.put => _handlePut(context),
     _ => Future.value(
         Response(statusCode: HttpStatus.methodNotAllowed),
       ),
@@ -48,10 +48,10 @@ Future<Response> _handleGet() async {
   }
 }
 
-Future<Response> _handlePatch(RequestContext context) async {
+Future<Response> _handlePut(RequestContext context) async {
   final firestore = Firestore.instance;
   final usersCollection = firestore.collection('users');
-  // PATCH /admin/users?userId=123
+  // PUT /admin/users?userId=123
 
   final userId = context.request.uri.queryParameters['userId'];
   if (userId == null) {
@@ -90,10 +90,10 @@ Future<Response> _handlePatch(RequestContext context) async {
       );
     }
 
-    final currentAssignedEstates =
-        List<String>.from(userDoc['assignedEstates'] as Iterable<dynamic>);
-    final currentAssignedDevices =
-        List<String>.from(userDoc['assignedDevices'] as Iterable<dynamic>);
+    final currentAssignedEstates = List<String>.from(
+        userDoc['assignedEstates'] as Iterable<dynamic>? ?? [],);
+    final currentAssignedDevices = List<String>.from(
+        userDoc['assignedDevices'] as Iterable<dynamic>? ?? [],);
 
     final updatedEstates = currentAssignedEstates
         .where((estateId) => !estatesToUpdate.contains(estateId))
@@ -111,7 +111,6 @@ Future<Response> _handlePatch(RequestContext context) async {
       'updatedAt': DateTime.now().toIso8601String(),
     };
 
-    print(status);
     if (status != null && status != '') {
       updateData['status'] = status;
     }
