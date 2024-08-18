@@ -15,7 +15,6 @@ Future<Response> onRequest(RequestContext context) async {
   };
 }
 
-
 Future<Response> _handleGet(RequestContext context) async {
   final firestore = Firestore.instance;
   final usersCollection = firestore.collection('users');
@@ -42,7 +41,8 @@ Future<Response> _handleGet(RequestContext context) async {
       );
     }
 
-    final assignedEstateIds = (userDoc.map['assignedEstates'] as List<dynamic>?) ?? [];
+    final assignedEstateIds =
+        (userDoc.map['assignedEstates'] as List<dynamic>?) ?? [];
 
     if (assignedEstateIds.isEmpty) {
       return Response(
@@ -56,21 +56,19 @@ Future<Response> _handleGet(RequestContext context) async {
 
     final assignedEstates = await Future.wait(
       assignedEstateIds.map((estateId) =>
-        estatesCollection.where('estateID', isEqualTo: estateId).get()
-      ),
+          estatesCollection.where('estateID', isEqualTo: estateId).get(),),
     );
 
-    final estateDetails = assignedEstates
-      .where((estates) => estates.isNotEmpty)
-      .map((estates) {
-        final estate = estates.first.map;
-        return {
-          'estateId': estate['estateID'],
-          'estateName': estate['estateName'],
-          'status': estate['status'],
-          'scenes': estate['scenes'],
-        };
-      }).toList();
+    final estateDetails =
+        assignedEstates.where((estates) => estates.isNotEmpty).map((estates) {
+      final estate = estates.first.map;
+      return {
+        'estateId': estate['estateID'],
+        'estateName': estate['estateName'],
+        'status': estate['status'],
+        'scenes': estate['scenes'],
+      };
+    }).toList();
 
     return Response(
       body: jsonEncode({
@@ -79,7 +77,6 @@ Future<Response> _handleGet(RequestContext context) async {
       }),
       headers: {'Content-Type': 'application/json'},
     );
-
   } catch (e) {
     return Response(
       statusCode: HttpStatus.internalServerError,
@@ -87,7 +84,6 @@ Future<Response> _handleGet(RequestContext context) async {
     );
   }
 }
-
 
 Future<Response> _handlePost(RequestContext context) async {
   final firestore = Firestore.instance;
@@ -120,7 +116,7 @@ Future<Response> _handlePost(RequestContext context) async {
 
     final estateChecks = await Future.wait(
       estateIds.map((estateId) =>
-          estatesCollection.where('estateID', isEqualTo: estateId).get()),
+          estatesCollection.where('estateID', isEqualTo: estateId).get(),),
     );
 
     final nonExistentEstates = estateChecks
@@ -134,7 +130,7 @@ Future<Response> _handlePost(RequestContext context) async {
       return Response(
         statusCode: HttpStatus.notFound,
         body: jsonEncode(
-            {'error': 'Estates not found', 'estateIds': nonExistentEstates}),
+            {'error': 'Estates not found', 'estateIds': nonExistentEstates},),
       );
     }
 

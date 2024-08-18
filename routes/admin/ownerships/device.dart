@@ -48,7 +48,7 @@ Future<Response> _handleGet(RequestContext context) async {
       return Response(
         body: jsonEncode({
           'userId': userId,
-          'assignedDevices': [],
+          'assignedDevices': <dynamic>[],
         }),
         headers: {'Content-Type': 'application/json'},
       );
@@ -56,7 +56,7 @@ Future<Response> _handleGet(RequestContext context) async {
 
     final assignedDevices = await Future.wait(
       assignedDeviceIds.map((deviceId) =>
-          devicesCollection.where('deviceID', isEqualTo: deviceId).get()),
+          devicesCollection.where('deviceID', isEqualTo: deviceId).get(),),
     );
 
     final deviceDetails =
@@ -116,7 +116,7 @@ Future<Response> _handlePost(RequestContext context) async {
 
     final deviceChecks = await Future.wait(
       deviceIds.map((deviceId) =>
-          devicesCollection.where('deviceID', isEqualTo: deviceId).get()),
+          devicesCollection.where('deviceID', isEqualTo: deviceId).get(),),
     );
 
     final nonExistentDevices = deviceChecks
@@ -130,7 +130,7 @@ Future<Response> _handlePost(RequestContext context) async {
       return Response(
         statusCode: HttpStatus.notFound,
         body: jsonEncode(
-            {'error': 'Devices not found', 'deviceIds': nonExistentDevices}),
+            {'error': 'Devices not found', 'deviceIds': nonExistentDevices},),
       );
     }
 
