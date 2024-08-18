@@ -29,10 +29,8 @@ void _handleMessage(WebSocketChannel channel, String message) {
   switch (action) {
     case 'id':
       _broadcastId(data);
-      break;
     case 'status':
       _updateStatus(data);
-      break;
   }
 }
 
