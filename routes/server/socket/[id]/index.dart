@@ -51,7 +51,7 @@ void _handleMessage(String deviceId, WebSocketChannel sender, String message) {
 }
 
 void _sendStatusUpdate(
-    WebSocketChannel channel, String deviceId, String status) {
+    WebSocketChannel channel, String deviceId, String status,) {
   final statusUpdate = jsonEncode({
     'deviceId': deviceId,
     'status': status,
@@ -61,7 +61,7 @@ void _sendStatusUpdate(
 
 void _logConnectionsTable() {
   final buffer = StringBuffer();
-  buffer.writeln('');
+  buffer.writeln();
   buffer.writeln('Current WebSocket Connections:');
   buffer.writeln('╔════════════════╦═══════════════╗');
   buffer.writeln('║    Device ID   ║ Connections   ║');
@@ -69,7 +69,7 @@ void _logConnectionsTable() {
 
   _deviceConnections.forEach((deviceId, connections) {
     buffer.writeln(
-        '║ ${deviceId.padRight(14)} ║ ${connections.length.toString().padLeft(13)} ║');
+        '║ ${deviceId.padRight(14)} ║ ${connections.length.toString().padLeft(13)} ║',);
   });
 
   buffer.writeln('╚════════════════╩═══════════════╝');
