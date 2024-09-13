@@ -4,7 +4,7 @@ import 'package:logging/logging.dart';
 
 final connectedClients = <WebSocketChannel>[];
 String currentScene = '';
-String currentLocation = 't0';
+String currentLocation = '';
 String previousScene = '';
 String previousLocation = '';
 
@@ -17,10 +17,6 @@ Future<Response> onRequest(RequestContext context) async {
 
   final handler = webSocketHandler((channel, protocol) {
     connectedClients.add(channel);
-
-    // Send the current scene and location to the newly connected client
-    channel.sink.add('sceneChanged:$currentScene');
-    channel.sink.add('locationChanged:$currentLocation');
 
     channel.stream.listen(
       (message) {
@@ -55,10 +51,6 @@ void handleSceneChange(String newScene) {
     previousScene = currentScene;
     currentScene = newScene;
     broadcastChange('sceneChanged', newScene);
-    // Reset location when scene changes
-    previousLocation = currentLocation;
-    currentLocation = 't0';
-    broadcastChange('locationChanged', currentLocation);
     logStatus();
   }
 }
@@ -73,8 +65,9 @@ void handleLocationChange(String newLocation) {
 }
 
 void broadcastChange(String changeType, String newValue) {
+  logger.info('Broadcasting $changeType: $newValue');
   for (final client in connectedClients) {
-    client.sink.add('$changeType:$newValue');
+    client.sink.add('$newValue');
   }
 }
 
